@@ -1,12 +1,6 @@
-.contentContainer{
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0 2rem;
-  height: calc(100vh - 7rem);
-}
-
 .contentPost{
-  max-width: 1120px;
+  max-width: 700px;
+  cursor: pointer;
 
   h1{
     color: var(--gray-50);
@@ -14,6 +8,8 @@
     line-height: 2.125rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
+
+    transition: color 0.2s;
   }
 
   p{
@@ -44,5 +40,20 @@
 
   & + .contentPost{
     margin-top: 3rem;
+  }
+
+  &:hover h1{
+    color: var(--pink-500);
+  }
+}
+
+.morePosts{
+  margin-top: 4rem;
+  color: var(--pink-500);
+  background: transparent;
+  border: 0;
+
+  &:hover{
+    text-decoration: underline;
   }
 }
