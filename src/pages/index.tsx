@@ -9,7 +9,7 @@ import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
-import { api } from '../services/api';
+import Header from '../components/Header';
 
 interface Post {
   uid?: string;
@@ -22,8 +22,7 @@ interface Post {
 }
 
 interface PostPagination {
-  next_page: number;
-  total_pages: number;
+  next_page: string;
   results: Post[];
 }
 
@@ -32,7 +31,7 @@ interface HomeProps {
 }
 
 export default function Home({ postsPagination }: HomeProps): JSX.Element {
-  const [nextPage, setNextPage] = useState<number>(1);
+  const [nextPage, setNextPage] = useState<string>('');
   const [posts, setPosts] = useState<Post[]>();
 
   useEffect(() => {
@@ -41,11 +40,23 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
   }, []);
 
   async function handleMorePosts(): Promise<void> {
-    const response = await api.get(`/posts/${nextPage}`);
-    const newPosts = response.data;
+    if (nextPage) {
+      const dataResponse = await fetch(nextPage).then(async response => {
+        const d = await response.json().then(data => {
+          return data;
+        });
 
-    setNextPage(nextPage + 1);
-    setPosts(posts.concat(newPosts));
+        return d;
+      });
+
+      const newPostPagination: PostPagination = {
+        next_page: dataResponse.next_page,
+        results: dataResponse.results,
+      };
+
+      setNextPage(newPostPagination.next_page);
+      setPosts([...posts, ...newPostPagination.results]);
+    }
   }
 
   return (
@@ -53,6 +64,8 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
       <Head>
         <title>Home | spacetraveling</title>
       </Head>
+
+      <Header />
 
       <main className={commonStyles.contentContainer}>
         {posts?.map(post => (
@@ -63,7 +76,11 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
               <div className={styles.detailPost}>
                 <div>
                   <img src="/images/calendar.svg" alt="calendario" />
-                  <span>{post.first_publication_date}</span>
+                  <span>
+                    {moment(post.first_publication_date)
+                      .locale('pt-br')
+                      .format('DD MMM YYYY')}
+                  </span>
                 </div>
                 <div>
                   <img src="/images/user.svg" alt="autor" />
@@ -73,7 +90,7 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
             </section>
           </Link>
         ))}
-        {postsPagination.total_pages >= nextPage ? (
+        {nextPage ? (
           <button
             className={styles.morePosts}
             type="button"
@@ -101,17 +118,8 @@ export const getStaticProps = async (): Promise<
   );
 
   const postPagination: PostPagination = {
-    next_page: response.page + 1,
-    total_pages: response.total_pages,
-    results: response.results.map(post => {
-      return {
-        uid: post.uid,
-        first_publication_date: moment(post.first_publication_date)
-          .locale('pt-br')
-          .format('DD MMM YYYY'),
-        data: post.data,
-      };
-    }),
+    next_page: response.next_page,
+    results: response.results,
   };
 
   return {
